@@ -1,6 +1,12 @@
-# crud_alarm
+# Alarm Buddy
 
-A new Flutter project.
+Alarm Buddy is a feature-rich alarm application built with Flutter. It supports CRUD operations using sqflite, notifications, and a dynamic theme feature that allows users to switch between light mode and dark mode.
+
+## Features
+
+CRUD Operations: Create, Read, Update, and Delete alarms using sqflite.
+Notifications: Receive notifications for your alarms.
+Dynamic Theme: Switch between light mode and dark mode.
 
 ## Getting Started
 

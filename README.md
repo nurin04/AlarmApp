@@ -5,7 +5,9 @@ Alarm Buddy is a feature-rich alarm application built with Flutter. It supports 
 ## Features
 
 CRUD Operations: Create, Read, Update, and Delete alarms using sqflite.
+
 Notifications: Receive notifications for your alarms.
+
 Dynamic Theme: Switch between light mode and dark mode.
 
 ## Getting Started

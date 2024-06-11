@@ -10,6 +10,8 @@ Notifications: Receive notifications for your alarms.
 
 Dynamic Theme: Switch between light mode and dark mode.
 
+
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
@@ -22,3 +24,10 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+### Prerequisites
+Ensure you have the following installed:
+
+Flutter SDK
+Dart SDK
+An IDE such as Android Studio or VS Code with Flutter and Dart plugins

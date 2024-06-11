@@ -29,5 +29,9 @@ samples, guidance on mobile development, and a full API reference.
 Ensure you have the following installed:
 
 Flutter SDK
+
 Dart SDK
+
 An IDE such as Android Studio or VS Code with Flutter and Dart plugins
+
+

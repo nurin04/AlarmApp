@@ -1,3 +1,4 @@
+![logo](https://github.com/nurin04/AlarmApp/assets/102978383/54f389c6-7234-47bd-ab6c-f5b5af9c591d)
 # Alarm Buddy
 
 Alarm Buddy is a feature-rich alarm application built with Flutter. It supports CRUD operations using sqflite, notifications, and a dynamic theme feature that allows users to switch between light mode and dark mode.

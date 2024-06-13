@@ -48,8 +48,7 @@ static Future<void> scheduleNotification(
     platformChannelSpecifics,
     androidAllowWhileIdle: true,
     uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-    // Remove the following line
-    // matchDateTimeComponents: DateTimeComponents.time,
+    
   );
 }
 

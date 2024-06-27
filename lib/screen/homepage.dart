@@ -1,5 +1,3 @@
-//hello
-
 import 'dart:async';
 
 import 'package:crud_alarm/provider/uiprovider.dart';

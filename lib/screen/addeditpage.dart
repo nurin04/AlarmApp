@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../provider/alarm_provider.dart';
 import '../provider/sql_helper.dart';
 
@@ -23,6 +22,8 @@ class ShowForm extends StatefulWidget {
 class _ShowFormState extends State<ShowForm> {
   DateTime? date;
   TimeOfDay? time;
+  String _repeatType = 'None'; // Added repeatType
+
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
@@ -33,7 +34,8 @@ class _ShowFormState extends State<ShowForm> {
     super.initState();
     if (widget.id != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final existingJournal = widget.alarms.firstWhere((element) => element['id'] == widget.id);
+        final existingJournal =
+            widget.alarms.firstWhere((element) => element['id'] == widget.id);
         _titleController.text = existingJournal['title'];
         DateTime dateTime = DateTime.parse(existingJournal['dateTime']);
         setState(() {
@@ -41,6 +43,7 @@ class _ShowFormState extends State<ShowForm> {
           time = TimeOfDay.fromDateTime(dateTime);
           _dateController.text = DateFormat('yyyy-MM-dd').format(date!);
           _timeController.text = time!.format(context);
+          _repeatType = existingJournal['repeatType'] ?? 'None'; // Initialize repeatType
         });
       });
     } else {
@@ -54,18 +57,47 @@ class _ShowFormState extends State<ShowForm> {
 
   Future<void> _addItem() async {
     final dateTime = DateTime(date!.year, date!.month, date!.day, time!.hour, time!.minute);
-    final id = await SQLHelper.createItem(_titleController.text, dateTime);
+
+    // Logging start time
+    final startTime = DateTime.now();
+
+    final id = await SQLHelper.createItem(_titleController.text, dateTime, _repeatType);
     print('Created new item with id: $id'); // Debug statement
-    await AlarmProvider.scheduleNotification(id, _titleController.text, dateTime);
+
+    // Logging time taken for database operation
+    print('Database operation took: ${DateTime.now().difference(startTime).inMilliseconds}ms');
+
+    // Scheduling notification
+    final notificationStartTime = DateTime.now();
+    await AlarmProvider.scheduleNotification(id, _titleController.text, dateTime, _repeatType);
+
+    // Logging time taken for notification scheduling
+    print('Notification scheduling took: ${DateTime.now().difference(notificationStartTime).inMilliseconds}ms');
+
     widget.refreshAlarms();
   }
 
   Future<void> _updateItem(int id) async {
     final dateTime = DateTime(date!.year, date!.month, date!.day, time!.hour, time!.minute);
-    await SQLHelper.updateItem(id, _titleController.text, dateTime);
+
+    // Logging start time
+    final startTime = DateTime.now();
+
+    await SQLHelper.updateItem(id, _titleController.text, dateTime, _repeatType);
     print('Updated item with id: $id'); // Debug statement
+
+    // Logging time taken for database operation
+    print('Database operation took: ${DateTime.now().difference(startTime).inMilliseconds}ms');
+
+    // Canceling and rescheduling notification
+    final cancelStartTime = DateTime.now();
     await AlarmProvider.cancelNotification(id);
-    await AlarmProvider.scheduleNotification(id, _titleController.text, dateTime);
+    print('Notification cancelation took: ${DateTime.now().difference(cancelStartTime).inMilliseconds}ms');
+
+    final scheduleStartTime = DateTime.now();
+    await AlarmProvider.scheduleNotification(id, _titleController.text, dateTime, _repeatType);
+    print('Notification scheduling took: ${DateTime.now().difference(scheduleStartTime).inMilliseconds}ms');
+
     widget.refreshAlarms();
   }
 
@@ -176,35 +208,39 @@ class _ShowFormState extends State<ShowForm> {
                 return null;
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              value: _repeatType,
+              decoration: InputDecoration(
+                hintText: 'Repeat Type',
+                border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.repeat),
+              ),
+              items: ['None', 'Daily', 'Weekday', 'Weekend'].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _repeatType = value!;
+                });
+              },
+            ),
+            const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () async {
-                if (_formKey.currentState!.validate() && date != null && time != null) {
-                  print('Form is valid, proceeding with save'); // Debug statement
-                  if (widget.id == null) {
-                    await _addItem();
-                  } else {
+                if (_formKey.currentState!.validate()) {
+                  if (widget.id != null) {
                     await _updateItem(widget.id!);
+                  } else {
+                    await _addItem();
                   }
-
-                  _titleController.clear();
-                  _dateController.clear();
-                  _timeController.clear();
-                  date = null;
-                  time = null;
-
-                  Navigator.of(context).pop();
-                } else {
-                  print('Form is not valid or date/time is not set'); // Debug statement
+                  Navigator.pop(context);
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 13, 60, 114),
-              ),
-              child: Text(
-                widget.id == null ? 'Create New' : 'Update',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: Text(widget.id != null ? 'Update' : 'Add'),
             ),
           ],
         ),

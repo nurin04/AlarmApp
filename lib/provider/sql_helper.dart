@@ -8,6 +8,7 @@ class SQLHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         title TEXT,
         dateTime TEXT,
+        repeatType TEXT,
         createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     """);
@@ -23,9 +24,13 @@ class SQLHelper {
     );
   }
 
-  static Future<int> createItem(String title, DateTime dateTime) async {
+  static Future<int> createItem(String title, DateTime dateTime, String repeatType) async {
     final db = await SQLHelper.db();
-    final data = {'title': title, 'dateTime': dateTime.toIso8601String()};
+    final data = {
+      'title': title,
+      'dateTime': dateTime.toIso8601String(),
+      'repeatType': repeatType,
+    };
     final id = await db.insert('items', data, conflictAlgorithm: sql.ConflictAlgorithm.replace);
     print('Item inserted with id: $id'); // Debug statement
     return id;
@@ -41,11 +46,12 @@ class SQLHelper {
     return db.query('items', where: "id = ?", whereArgs: [id], limit: 1);
   }
 
-  static Future<int> updateItem(int id, String title, DateTime dateTime) async {
+  static Future<int> updateItem(int id, String title, DateTime dateTime, String repeatType) async {
     final db = await SQLHelper.db();
     final data = {
       'title': title,
       'dateTime': dateTime.toIso8601String(),
+      'repeatType': repeatType,
       'createdAt': DateTime.now().toString()
     };
     final result = await db.update('items', data, where: "id = ?", whereArgs: [id]);

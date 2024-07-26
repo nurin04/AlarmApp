@@ -63,6 +63,21 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Icon _getRepeatTypeIcon(String repeatType) {
+    switch (repeatType) {
+      case 'Daily':
+        return Icon(Icons.calendar_today, color: Colors.blue, size: 20);
+      case 'Weekday':
+        return Icon(Icons.work, color: Colors.orange, size: 20);
+      case 'Weekend':
+        return Icon(Icons.sunny, color: Colors.yellow, size: 20);
+      case 'None':
+        return Icon(Icons.cancel, color: Colors.grey, size: 20);
+      default:
+        return Icon(Icons.help, color: Colors.red, size: 20);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,6 +91,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         backgroundColor: const Color.fromARGB(255, 13, 60, 114),
+        elevation: 4,
         actions: [
           Consumer<UiProvider>(
             builder: (context, UiProvider notifier, child) {
@@ -119,54 +135,60 @@ class _HomePageState extends State<HomePage> {
                     itemCount: _alarms.length,
                     itemBuilder: (context, index) {
                       final title = _alarms[index]['title'];
-                      final dateTime = DateTime.parse(_alarms[index]['dateTime']);
-                      final dateFormatted = DateFormat('yyyy-MM-dd').format(dateTime);
-                      final timeFormatted = DateFormat('HH:mm').format(dateTime);
+                      final dateTime =
+                          DateTime.parse(_alarms[index]['dateTime']);
+                      final timeFormatted =
+                          DateFormat('HH:mm').format(dateTime);
+                      final repeatType = _alarms[index]['repeatType'];
 
                       return Card(
-                        elevation: 3,
+                        elevation: 5,
+                        shadowColor: Colors.grey.withOpacity(0.3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
-                        margin: const EdgeInsets.all(15),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 15, vertical: 8),
                         child: ListTile(
+                          contentPadding: const EdgeInsets.all(15),
                           title: Text(
                             title,
                             style: const TextStyle(
-                              fontSize: 18,
+                              fontSize: 19,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 5),
                               Row(
                                 children: [
-                                  const Icon(Icons.calendar_today, size: 18, color: Color.fromARGB(255, 68, 117, 173)),
-                                  const SizedBox(width: 5),
+                                  const Icon(Icons.access_time,
+                                      size: 20,
+                                      color: Color.fromARGB(255, 68, 117, 173)),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    '$dateFormatted',
+                                    timeFormatted,
                                     style: const TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 15,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 5),
+                              const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  const Icon(Icons.access_time, size: 18, color: Color.fromARGB(255, 68, 117, 173)),
-                                  const SizedBox(width: 5),
+                                  _getRepeatTypeIcon(repeatType),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    '$timeFormatted',
+                                    repeatType,
                                     style: const TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 5),
                             ],
                           ),
                           trailing: PopupMenu(

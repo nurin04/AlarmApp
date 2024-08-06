@@ -31,19 +31,25 @@ class AlarmProvider {
 
     // Define the sound for the notification based on the selected sound
     RawResourceAndroidNotificationSound notificationSound;
-    if (sound == 'sound1') {
-      notificationSound = RawResourceAndroidNotificationSound('sound1');
-    } else if (sound == 'sound2') {
-      notificationSound = RawResourceAndroidNotificationSound('sound2');
-    } else if (sound == 'sound3') {
-      notificationSound = RawResourceAndroidNotificationSound('sound3');
-    } else if (sound == 'sound4') {
-      notificationSound = RawResourceAndroidNotificationSound('sound4');
-    } else if (sound == 'sound5') {
-      notificationSound = RawResourceAndroidNotificationSound('sound5');
-    } else {
-      // Default sound if none of the above match
-      notificationSound = RawResourceAndroidNotificationSound('default_sound');
+    switch (sound) {
+      case 'sound1':
+        notificationSound = RawResourceAndroidNotificationSound('sound1');
+        break;
+      case 'sound2':
+        notificationSound = RawResourceAndroidNotificationSound('sound2');
+        break;
+      case 'sound3':
+        notificationSound = RawResourceAndroidNotificationSound('sound3');
+        break;
+      case 'sound4':
+        notificationSound = RawResourceAndroidNotificationSound('sound4');
+        break;
+      case 'sound5':
+        notificationSound = RawResourceAndroidNotificationSound('sound5');
+        break;
+      default:
+        notificationSound = RawResourceAndroidNotificationSound('default_sound');
+        break;
     }
 
     // Create or update notification channel
@@ -61,8 +67,17 @@ class AlarmProvider {
     final NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
 
-    // Schedule initial notification if today is a valid day for the repeat type
-    if (_isValidDayForRepeatType(dateTime, repeatType)) {
+    // Handle repeat logic based on selected repeatType
+    if (repeatType == 'Daily') {
+      await _scheduleDailyNotification(
+          id, title, notificationMessage, dateTime, platformChannelSpecifics);
+    } else if (repeatType == 'Weekday') {
+      await _scheduleWeekdayNotifications(
+          id, title, notificationMessage, dateTime, platformChannelSpecifics);
+    } else if (repeatType == 'Weekend') {
+      await _scheduleWeekendNotifications(
+          id, title, notificationMessage, dateTime, platformChannelSpecifics);
+    } else if (repeatType == 'None') {
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id,
         title,
@@ -73,18 +88,6 @@ class AlarmProvider {
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );
-    }
-
-    // Handle repeat logic based on selected repeatType
-    if (repeatType == 'Daily') {
-      await _scheduleDailyNotification(
-          id, title, notificationMessage, dateTime, platformChannelSpecifics);
-    } else if (repeatType == 'Weekday') {
-      _scheduleWeekdayNotifications(
-          id, title, notificationMessage, dateTime, platformChannelSpecifics);
-    } else if (repeatType == 'Weekend') {
-      _scheduleWeekendNotifications(
-          id, title, notificationMessage, dateTime, platformChannelSpecifics);
     }
   }
 
@@ -105,9 +108,9 @@ class AlarmProvider {
       String notificationMessage,
       DateTime dateTime,
       NotificationDetails platformChannelSpecifics) async {
-    // Ensure the scheduledDate is in the future
     final tz.TZDateTime scheduledDate =
-        _getFutureDate(tz.TZDateTime.from(dateTime, tz.local));
+        tz.TZDateTime.from(dateTime, tz.local);
+    
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id,
       title,
@@ -118,6 +121,7 @@ class AlarmProvider {
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
+      payload: 'repeat_daily',
     );
   }
 
@@ -127,35 +131,15 @@ class AlarmProvider {
       String notificationMessage,
       DateTime dateTime,
       NotificationDetails platformChannelSpecifics) async {
-    // Schedule the first notification if it falls on a weekday
-    final tz.TZDateTime firstScheduledDate =
-        _getFutureDate(tz.TZDateTime.from(dateTime, tz.local));
-    if (firstScheduledDate.weekday >= DateTime.monday &&
-        firstScheduledDate.weekday <= DateTime.friday) {
-      await flutterLocalNotificationsPlugin.zonedSchedule(
-        id,
-        title,
-        notificationMessage,
-        firstScheduledDate,
-        platformChannelSpecifics,
-        androidAllowWhileIdle: true,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-      );
-    }
+    DateTime startDate = dateTime.isBefore(DateTime.now()) ? DateTime.now() : dateTime;
 
-    // Schedule notifications for the next weekdays
-    DateTime nextDateTime = dateTime.add(Duration(days: 1));
-    int nextId = id + 1;
-    for (int i = 1; i < 7; i++) {
-      // Skip weekends
-      if (nextDateTime.weekday >= DateTime.monday &&
-          nextDateTime.weekday <= DateTime.friday) {
+    for (int i = 0; i < 7; i++) {
+      final nextDateTime = startDate.add(Duration(days: i));
+      if (nextDateTime.weekday >= DateTime.monday && nextDateTime.weekday <= DateTime.friday) {
         final tz.TZDateTime nextScheduledDate =
             _getFutureDate(tz.TZDateTime.from(nextDateTime, tz.local));
         await flutterLocalNotificationsPlugin.zonedSchedule(
-          nextId,
+          id + i, // Unique ID for each notification
           title,
           notificationMessage,
           nextScheduledDate,
@@ -164,10 +148,9 @@ class AlarmProvider {
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+          payload: 'repeat_weekday',
         );
-        nextId++;
       }
-      nextDateTime = nextDateTime.add(Duration(days: 1));
     }
   }
 
@@ -177,14 +160,14 @@ class AlarmProvider {
       String notificationMessage,
       DateTime dateTime,
       NotificationDetails platformChannelSpecifics) async {
-    for (int i = 1; i < 7; i++) {
+    for (int i = 0; i < 7; i++) {
       final nextDateTime = dateTime.add(Duration(days: i));
       if (nextDateTime.weekday == DateTime.saturday ||
           nextDateTime.weekday == DateTime.sunday) {
         final tz.TZDateTime nextScheduledDate =
             _getFutureDate(tz.TZDateTime.from(nextDateTime, tz.local));
         await flutterLocalNotificationsPlugin.zonedSchedule(
-          id + i,
+          id + i, // Unique ID for each notification
           title,
           notificationMessage,
           nextScheduledDate,
@@ -193,6 +176,7 @@ class AlarmProvider {
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+          payload: 'repeat_weekend',
         );
       }
     }

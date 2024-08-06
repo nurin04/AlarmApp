@@ -19,7 +19,7 @@ class AlarmProvider {
   }
 
   static Future<void> scheduleNotification(
-      int id, String title, DateTime dateTime, String repeatType) async {
+      int id, String title, DateTime dateTime, String repeatType, String sound) async {
     final tz.TZDateTime scheduledDate =
         _getFutureDate(tz.TZDateTime.from(dateTime, tz.local));
 
@@ -27,18 +27,38 @@ class AlarmProvider {
         DateFormat.jm().format(dateTime); // Format time as 02:30 AM
 
     final notificationMessage = 'Alarm is set at $formattedTime';
+    print('Scheduling notification with sound: $sound');
 
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    // Define the sound for the notification based on the selected sound
+    RawResourceAndroidNotificationSound notificationSound;
+    if (sound == 'sound1') {
+      notificationSound = RawResourceAndroidNotificationSound('sound1');
+    } else if (sound == 'sound2') {
+      notificationSound = RawResourceAndroidNotificationSound('sound2');
+    } else if (sound == 'sound3') {
+      notificationSound = RawResourceAndroidNotificationSound('sound3');
+    } else if (sound == 'sound4') {
+      notificationSound = RawResourceAndroidNotificationSound('sound4');
+    } else if (sound == 'sound5') {
+      notificationSound = RawResourceAndroidNotificationSound('sound5');
+    } else {
+      // Default sound if none of the above match
+      notificationSound = RawResourceAndroidNotificationSound('default_sound');
+    }
+
+    // Create or update notification channel
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'your_channel_id',
+      'your_channel_id_$id', // Unique channel ID for each notification
       'your_channel_name',
       channelDescription: 'your_channel_description',
-      sound: RawResourceAndroidNotificationSound("alaram"),
       importance: Importance.max,
       priority: Priority.high,
+      sound: notificationSound,
+      playSound: true,
     );
 
-    const NotificationDetails platformChannelSpecifics =
+    final NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
 
     // Schedule initial notification if today is a valid day for the repeat type

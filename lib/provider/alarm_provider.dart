@@ -102,57 +102,54 @@ class AlarmProvider {
     return true; // For 'None' and 'Daily', any day is valid
   }
 
-  static Future<void> _scheduleDailyNotification(
-      int id,
-      String title,
-      String notificationMessage,
-      DateTime dateTime,
-      NotificationDetails platformChannelSpecifics) async {
-    final tz.TZDateTime scheduledDate =
-        tz.TZDateTime.from(dateTime, tz.local);
-    
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      notificationMessage,
-      scheduledDate,
-      platformChannelSpecifics,
-      androidAllowWhileIdle: true,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-      payload: 'repeat_daily',
-    );
-  }
+static Future<void> _scheduleDailyNotification(
+    int id,
+    String title,
+    String notificationMessage,
+    DateTime dateTime,
+    NotificationDetails platformChannelSpecifics) async {
+  final tz.TZDateTime scheduledDate = _getFutureDate(tz.TZDateTime.from(dateTime, tz.local));
+  
+  await flutterLocalNotificationsPlugin.zonedSchedule(
+    id,
+    title,
+    notificationMessage,
+    scheduledDate,
+    platformChannelSpecifics,
+    androidAllowWhileIdle: true,
+    uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+    matchDateTimeComponents: DateTimeComponents.time,
+    payload: 'repeat_daily',
+  );
+}
 
-  static Future<void> _scheduleWeekdayNotifications(
-      int id,
-      String title,
-      String notificationMessage,
-      DateTime dateTime,
-      NotificationDetails platformChannelSpecifics) async {
-    DateTime startDate = dateTime.isBefore(DateTime.now()) ? DateTime.now() : dateTime;
-
-    for (int i = 0; i < 7; i++) {
-      final nextDateTime = startDate.add(Duration(days: i));
-      if (nextDateTime.weekday >= DateTime.monday && nextDateTime.weekday <= DateTime.friday) {
-        final tz.TZDateTime nextScheduledDate =
-            _getFutureDate(tz.TZDateTime.from(nextDateTime, tz.local));
-        await flutterLocalNotificationsPlugin.zonedSchedule(
-          id + i, // Unique ID for each notification
-          title,
-          notificationMessage,
-          nextScheduledDate,
-          platformChannelSpecifics,
-          androidAllowWhileIdle: true,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-          matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-          payload: 'repeat_weekday',
-        );
-      }
+static Future<void> _scheduleWeekdayNotifications(
+    int baseId,
+    String title,
+    String notificationMessage,
+    DateTime dateTime,
+    NotificationDetails platformChannelSpecifics) async {
+  DateTime startDate = dateTime.isBefore(DateTime.now()) ? DateTime.now() : dateTime;
+  
+  for (int i = 0; i < 7; i++) {
+    final nextDateTime = startDate.add(Duration(days: i));
+    if (nextDateTime.weekday >= DateTime.monday && nextDateTime.weekday <= DateTime.friday) {
+      final tz.TZDateTime nextScheduledDate = _getFutureDate(tz.TZDateTime.from(nextDateTime, tz.local));
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        baseId + i, // Unique ID for each notification
+        title,
+        notificationMessage,
+        nextScheduledDate,
+        platformChannelSpecifics,
+        androidAllowWhileIdle: true,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+        payload: 'repeat_weekday',
+      );
     }
   }
+}
+
 
   static Future<void> _scheduleWeekendNotifications(
       int id,
